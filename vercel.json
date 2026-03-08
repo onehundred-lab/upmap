@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/proxy", "destination": "/api/proxy" },
+    { "source": "/((?!api|assets|icon-|manifest|favicon).*)", "destination": "/index.html" }
+  ]
+}
