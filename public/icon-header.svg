@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="pin" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e8e8e8"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(256,256) scale(1.1) translate(-256,-256)">
+    <path d="M256 72c-72 0-130 58-130 130 0 97 130 238 130 238s130-141 130-238c0-72-58-130-130-130z" fill="url(#pin)"/>
+    <ellipse cx="228" cy="110" rx="8" ry="13" fill="#0d1117"/>
+    <ellipse cx="284" cy="110" rx="8" ry="13" fill="#0d1117"/>
+    <circle cx="256" cy="196" r="65" fill="#0d1117"/>
+    <text x="256" y="228" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="95" fill="#ffffff">U</text>
+  </g>
+</svg>

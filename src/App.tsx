@@ -286,8 +286,7 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1 className="logo">📍 UPmap</h1>
-        <p className="subtitle">U+ 직장인 추천 맛집</p>
+        <h1 className="logo"><img src="/icon-header.svg" alt="UPmap" className="logo-icon" /> UPmap</h1>
       </header>
 
       <div className="controls">
