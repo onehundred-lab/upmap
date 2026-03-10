@@ -148,3 +148,66 @@ export async function fetchModelRestaurants(office: string): Promise<ModelRestau
   } catch { return []; }
 }
 
+
+// 식약처 모범음식점 (전국, HTTPS 직접 호출)
+export interface FdaModelStore {
+  name: string;
+  region: string;
+  mainMenu: string;
+}
+
+const FDA_API_KEY = '8a2cf7ce24d64ffbaaa4';
+
+export async function fetchFdaModelStores(office: string): Promise<FdaModelStore[]> {
+  const regionMap: Record<string, string> = {
+    '마곡': '강서', '상암': '마포', '용산': '용산',
+  };
+  const keyword = regionMap[office];
+  if (!keyword) return [];
+
+  // Firebase 캐시 확인 (30일)
+  const CACHE_DAYS = 30;
+  try {
+    const cacheRef = ref(db, `upmap/fdaModelCache/${office}`);
+    const snap = await get(cacheRef);
+    if (snap.exists()) {
+      const cached = snap.val();
+      const age = Date.now() - (cached.updatedAt || 0);
+      if (age < CACHE_DAYS * 24 * 60 * 60 * 1000 && cached.data?.length > 0) {
+        return cached.data;
+      }
+    }
+  } catch { /* ignore */ }
+
+  // 전체 데이터에서 해당 구 필터링 (1000건씩)
+  const result: FdaModelStore[] = [];
+  const total = 25000;
+  for (let start = 1; start <= total; start += 1000) {
+    const end = Math.min(start + 999, total);
+    const url = `https://openapi.foodsafetykorea.go.kr/api/${FDA_API_KEY}/I1590/json/${start}/${end}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const rows = data?.I1590?.row;
+      if (!rows) break;
+      for (const r of rows) {
+        if (r.SIGNGU_NM?.includes('서울') && r.SIGNGU_NM?.includes(keyword)) {
+          result.push({
+            name: r.BSSH_NM,
+            region: r.SIGNGU_NM,
+            mainMenu: r.PNCPL_FOOD_NM || '',
+          });
+        }
+      }
+    } catch { break; }
+  }
+
+  // Firebase 캐싱
+  try {
+    const cacheRef = ref(db, `upmap/fdaModelCache/${office}`);
+    await set(cacheRef, { data: result, updatedAt: Date.now() });
+  } catch { /* ignore */ }
+
+  return result;
+}
+

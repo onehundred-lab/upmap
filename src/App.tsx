@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { OFFICES, FOOD_CATEGORIES } from './config';
 import type { Office } from './config';
-import { fetchGovStores, fetchCheapStores, fetchCertStores, fetchModelRestaurants } from './services/publicData';
-import type { GovStore, CheapStore, CertStore, ModelRestaurant } from './services/publicData';
+import { fetchGovStores, fetchCheapStores, fetchCertStores, fetchModelRestaurants, fetchFdaModelStores } from './services/publicData';
+import type { GovStore, CheapStore, CertStore, ModelRestaurant, FdaModelStore } from './services/publicData';
 import {
   hasRecommended, recommendPlace, registerPlace,
   listenPlaces, searchKakaoPlaces,
 } from './services/recommend';
 import type { RegisteredPlace } from './services/recommend';
+import { submitInquiry, listenInquiries, deleteInquiry } from './services/inquiry';
+import type { Inquiry } from './services/inquiry';
+import { addTip, listenTips } from './services/tips';
+import type { Tip } from './services/tips';
 import './App.css';
 
 function App() {
@@ -28,6 +32,7 @@ function App() {
   const [cheapStores, setCheapStores] = useState<CheapStore[]>([]);
   const [certStores, setCertStores] = useState<CertStore[]>([]);
   const [modelRestaurants, setModelRestaurants] = useState<ModelRestaurant[]>([]);
+  const [fdaModelStores, setFdaModelStores] = useState<FdaModelStore[]>([]);
 
   // 등록 모달
   const [showRegister, setShowRegister] = useState(false);
@@ -37,12 +42,26 @@ function App() {
   const [regResults, setRegResults] = useState<any[]>([]);
   const [regSearching, setRegSearching] = useState(false);
 
+  // 문의하기
+  const [showInquiry, setShowInquiry] = useState(false);
+  const [inquiryText, setInquiryText] = useState('');
+  const [inquiryPw, setInquiryPw] = useState('');
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [inquiryUnlocked, setInquiryUnlocked] = useState(false);
+
+  // 꿀팁
+  const [openTipId, setOpenTipId] = useState<string | null>(null);
+  const [tips, setTips] = useState<Tip[]>([]);
+  const [tipText, setTipText] = useState('');
+  const tipUnsubRef = useRef<(() => void) | null>(null);
+
   // 공공데이터 로드
   useEffect(() => {
     fetchGovStores(selectedOffice.lat, selectedOffice.lng, 1000).then(setGovStores);
     fetchCheapStores().then(setCheapStores);
     fetchCertStores().then(setCertStores);
     fetchModelRestaurants(selectedOffice.shortName).then(setModelRestaurants);
+    fetchFdaModelStores(selectedOffice.shortName).then(setFdaModelStores);
   }, [selectedOffice]);
 
   // Firebase 실시간 리스닝
@@ -104,7 +123,7 @@ function App() {
       const n2 = g.bizesNm.replace(/\s/g, '').replace(/[점관호]/g, '');
       return n1.includes(n2) || n2.includes(n1);
     });
-    if (govMatch) badges.push('🏛️ 정부등록');
+    if (govMatch) {} // badges.push('🏛️ 정부등록') - 보류
 
     const certMatch = certStores.find(c => {
       if (c.lat && c.lng) {
@@ -125,8 +144,16 @@ function App() {
     });
     if (modelMatch) badges.push('🏅 모범음식점');
 
+    // 식약처 모범음식점
+    const fdaMatch = fdaModelStores.find(f => {
+      const n1 = name.replace(/\s/g, '');
+      const n2 = f.name.replace(/\s/g, '');
+      return n1.includes(n2) || n2.includes(n1);
+    });
+    if (fdaMatch) badges.push('🏆 식약처모범');
+
     return badges;
-  }, [govStores, cheapStores, certStores, modelRestaurants]);
+  }, [govStores, cheapStores, certStores, modelRestaurants, fdaModelStores]);
 
   // 마커 표시
   const displayMarkers = useCallback((list: RegisteredPlace[]) => {
@@ -153,12 +180,11 @@ function App() {
           if (infoWindowRef.current) infoWindowRef.current.close();
           const link = url || place.url;
           const iw = new kakao.maps.InfoWindow({
-            content: `<div style="padding:8px 28px 8px 12px;font-size:13px;min-width:150px;color:#000;position:relative;">
-              <span onclick="window.__closeIW && window.__closeIW()" style="position:absolute;top:4px;right:8px;cursor:pointer;font-size:15px;color:#999;line-height:1;">✕</span>
-              <strong>${place.name}</strong>
-              <span style="color:#333;font-size:11px;"> (${place.category})</span><br/>
-              ${place.phone ? `<span style="font-size:11px;">📞 ${place.phone}</span><br/>` : ''}
-              ${link ? `<a href="${link}" target="_blank" rel="noopener" style="font-size:11px;color:#1a73e8;">카카오맵</a>` : '<span style="font-size:11px;color:#999;">검색 중...</span>'}
+            content: `<div style="padding:10px 30px 10px 12px;font-size:13px;min-width:180px;max-width:260px;color:#e6edf3;background:#0d1117;border:1px solid #30363d;border-radius:8px;position:relative;word-break:keep-all;">
+              <span onclick="window.__closeIW && window.__closeIW()" style="position:absolute;top:4px;right:8px;cursor:pointer;font-size:15px;color:#8b949e;line-height:1;">✕</span>
+              ${link ? `<a href="${link}" target="_blank" rel="noopener" style="color:#ccff00;font-weight:700;text-decoration:underline;text-underline-offset:3px;">${place.name}</a>` : `<strong style="color:#ccff00;">${place.name}</strong>`}<br/>
+              <span style="color:#f0860a;font-size:11px;">${place.category}</span><br/>
+              ${place.phone ? `<a href="tel:${place.phone}" style="font-size:11px;color:#58a6ff;text-decoration:underline;">📞 ${place.phone}</a>` : ''}
             </div>`,
           });
           iw.open(mapInstance.current!, marker);
@@ -228,6 +254,7 @@ function App() {
 
   // 마커 업데이트
   useEffect(() => {
+    if (infoWindowRef.current) { infoWindowRef.current.close(); infoWindowRef.current = null; }
     if (mapReady) displayMarkers(displayPlaces);
   }, [displayPlaces, mapReady]);
 
@@ -237,11 +264,37 @@ function App() {
     await recommendPlace(placeId);
   };
 
+  const toggleTip = (placeId: string) => {
+    if (openTipId === placeId) {
+      setOpenTipId(null);
+      setTips([]);
+      setTipText('');
+      if (tipUnsubRef.current) { tipUnsubRef.current(); tipUnsubRef.current = null; }
+    } else {
+      if (tipUnsubRef.current) tipUnsubRef.current();
+      setOpenTipId(placeId);
+      setTipText('');
+      tipUnsubRef.current = listenTips(placeId, setTips);
+    }
+  };
+
+  const submitTip = async (placeId: string) => {
+    if (!tipText.trim()) return;
+    await addTip(placeId, tipText.trim());
+    setTipText('');
+  };
+
   // 등록 모달 열기
   const openRegister = () => {
     setShowRegister(true);
-    setRegStep('category');
-    setRegFoodType('');
+    const currentFood = FOOD_CATEGORIES.find(c => c.type === 'food' && c.code !== 'all' && c.code === selectedCategory);
+    if (currentFood) {
+      setRegFoodType(currentFood.code);
+      setRegStep('search');
+    } else {
+      setRegStep('category');
+      setRegFoodType('');
+    }
     setRegKeyword('');
     setRegResults([]);
   };
@@ -287,6 +340,7 @@ function App() {
     <div className="app">
       <header className="header">
         <h1 className="logo"><img src="/icon-header.svg" alt="UPmap" className="logo-icon" /> UPmap</h1>
+        <button className="inquiry-btn" onClick={() => setShowInquiry(true)}>💬 문의</button>
       </header>
 
       <div className="controls">
@@ -370,20 +424,51 @@ function App() {
                           >
                             👍 {place.recommends || ''}
                           </button>
+                          <button
+                            className={`tip-btn ${openTipId === place.id ? 'active' : ''}`}
+                            onClick={() => toggleTip(place.id)}
+                          >
+                            🍯 꿀팁
+                          </button>
                         </div>
                       )}
                     </div>
-                    <div className="place-category">{place.category}</div>
+                    <div className="place-category-row">
+                      <span className="place-category">{place.category}</span>
+                      {badges.length > 0 && (
+                        <div className="place-badges">
+                          {badges.map(b => <span key={b} className="badge">{b}</span>)}
+                        </div>
+                      )}
+                    </div>
                     {(place as any).mainMenu && (
                       <div className="place-menu">🍽️ {(place as any).mainMenu}</div>
                     )}
-                    {badges.length > 0 && (
-                      <div className="place-badges">
-                        {badges.map(b => <span key={b} className="badge">{b}</span>)}
+                    <div className="place-address">{place.address}</div>
+                    {place.phone && <div className="place-phone"><a href={`tel:${place.phone}`}>📞 {place.phone}</a></div>}
+                    {openTipId === place.id && (
+                      <div className="tip-section">
+                        <div className="tip-input-row">
+                          <input
+                            className="tip-input"
+                            placeholder="꿀팁을 남겨보세요"
+                            value={tipText}
+                            onChange={e => setTipText(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && submitTip(place.id)}
+                          />
+                          <button className="tip-submit" onClick={() => submitTip(place.id)}>등록</button>
+                        </div>
+                        <ul className="tip-list">
+                          {tips.map(t => (
+                            <li key={t.id} className="tip-item">
+                              <span className="tip-text">🍯 {t.text}</span>
+                              <span className="tip-date">{new Date(t.createdAt).toLocaleDateString('ko-KR')}</span>
+                            </li>
+                          ))}
+                          {tips.length === 0 && <li className="tip-empty">아직 꿀팁이 없어요. 첫 꿀팁을 남겨보세요!</li>}
+                        </ul>
                       </div>
                     )}
-                    <div className="place-address">{place.address}</div>
-                    {place.phone && <div className="place-phone">📞 {place.phone}</div>}
                   </div>
                 </li>
               );
@@ -466,6 +551,65 @@ function App() {
                 <button className="reg-back" onClick={() => setRegStep('search')}>← 다시 검색</button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* 문의하기 모달 */}
+      {showInquiry && (
+        <div className="modal-overlay" onClick={() => { setShowInquiry(false); setInquiryUnlocked(false); setInquiryPw(''); }}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>💬 문의하기</h2>
+              <button className="modal-close" onClick={() => { setShowInquiry(false); setInquiryUnlocked(false); setInquiryPw(''); }}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="inquiry-form">
+                <textarea
+                  className="inquiry-input"
+                  placeholder="문의 내용을 입력하세요"
+                  value={inquiryText}
+                  onChange={e => setInquiryText(e.target.value)}
+                  rows={3}
+                />
+                <button
+                  className="inquiry-submit"
+                  onClick={async () => {
+                    if (!inquiryText.trim()) return;
+                    await submitInquiry(inquiryText.trim());
+                    setInquiryText('');
+                  }}
+                >보내기</button>
+              </div>
+              <div className="inquiry-admin">
+                {!inquiryUnlocked ? (
+                  <div className="inquiry-pw-row">
+                    <span className="inquiry-pw-label">📋 문의 확인</span>
+                    <input
+                      className="inquiry-pw"
+                      type="password"
+                      placeholder="비밀번호 입력"
+                      value={inquiryPw}
+                      onChange={e => setInquiryPw(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && inquiryPw === '8821') { setInquiryUnlocked(true); const unsub = listenInquiries(setInquiries); (window as any).__inquiryUnsub = unsub; } }}
+                    />
+                    <button className="inquiry-pw-btn" onClick={() => { if (inquiryPw === '8821') { setInquiryUnlocked(true); const unsub = listenInquiries(setInquiries); (window as any).__inquiryUnsub = unsub; } }}>확인</button>
+                  </div>
+                ) : (
+                  <ul className="inquiry-list">
+                    {inquiries.map(inq => (
+                      <li key={inq.id} className="inquiry-item">
+                        <div className="inquiry-item-text">{inq.text}</div>
+                        <div className="inquiry-item-meta">
+                          <span>{new Date(inq.createdAt).toLocaleString('ko-KR')}</span>
+                          <button className="inquiry-del" onClick={() => deleteInquiry(inq.id)}>삭제</button>
+                        </div>
+                      </li>
+                    ))}
+                    {inquiries.length === 0 && <li className="inquiry-empty">문의 내역이 없습니다</li>}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
