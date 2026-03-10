@@ -73,8 +73,12 @@ export function getWeatherEmoji(w: WeatherData): string {
 export function getWeatherSummary(w: WeatherData): string {
   const sky = skyText(w.sky, w.pty);
   let s = `${sky} ${w.temp}°`;
-  if (w.tmn !== null && w.tmx !== null) {
-    s += ` (${w.tmn}°/${w.tmx}°)`;
+  if (w.tmn !== null || w.tmx !== null) {
+    const lo = w.tmn !== null ? `${w.tmn}°` : '';
+    const hi = w.tmx !== null ? `${w.tmx}°` : '';
+    if (lo && hi) s += ` (${lo}/${hi})`;
+    else if (hi) s += ` (최고 ${hi})`;
+    else if (lo) s += ` (최저 ${lo})`;
   }
   s += ` 💧${w.pop}%`;
   return s;
