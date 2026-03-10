@@ -1,5 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 const ALLOWED_HOSTS: Record<string, string> = {
   seoul: 'http://openapi.seoul.go.kr:8088',
   gangseo: 'http://openAPI.gangseo.seoul.kr:8088',
@@ -8,7 +6,7 @@ const ALLOWED_HOSTS: Record<string, string> = {
   weather: 'https://apis.data.go.kr',
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   const { target, path, ...rest } = req.query;
   const host = ALLOWED_HOSTS[target as string];
   if (!host || !path) {
