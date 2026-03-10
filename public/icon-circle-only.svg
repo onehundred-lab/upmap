@@ -11,13 +11,9 @@
   </defs>
   <rect width="512" height="512" rx="108" fill="url(#bg)"/>
   <g transform="translate(256,256) scale(0.96) translate(-256,-256)">
-    <!-- 핀 -->
     <path d="M256 72c-72 0-130 58-130 130 0 97 130 238 130 238s130-141 130-238c0-72-58-130-130-130z" fill="url(#pin)"/>
-    <!-- 눈 -->
-    <ellipse cx="228" cy="110" rx="11" ry="17" fill="#0d1117"/>
-    <ellipse cx="284" cy="110" rx="11" ry="17" fill="#0d1117"/>
-    <!-- 안쪽 원 + U -->
+    <ellipse cx="228" cy="110" rx="8" ry="13" fill="#0d1117"/>
+    <ellipse cx="284" cy="110" rx="8" ry="13" fill="#0d1117"/>
     <circle cx="256" cy="196" r="65" fill="#0d1117"/>
-    <text x="256" y="228" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="95" fill="#ffffff">U</text>
   </g>
 </svg>
