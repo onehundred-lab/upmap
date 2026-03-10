@@ -5,17 +5,24 @@ const ALLOWED_HOSTS: Record<string, string> = {
   gangseo: 'http://openAPI.gangseo.seoul.kr:8088',
   mapo: 'http://openAPI.mapo.go.kr:8088',
   yongsan: 'http://openAPI.yongsan.go.kr:8088',
+  weather: 'https://apis.data.go.kr',
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { target, path } = req.query;
+  const { target, path, ...rest } = req.query;
   const host = ALLOWED_HOSTS[target as string];
   if (!host || !path) {
     return res.status(400).json({ error: 'Invalid request' });
   }
 
   const pathStr = Array.isArray(path) ? path.join('/') : path;
-  const url = `${host}/${pathStr}`;
+  // 나머지 쿼리 파라미터를 URL에 추가 (기상청 API 등)
+  const extraParams = new URLSearchParams();
+  for (const [k, v] of Object.entries(rest)) {
+    if (typeof v === 'string') extraParams.set(k, v);
+  }
+  const qs = extraParams.toString();
+  const url = qs ? `${host}/${pathStr}?${qs}` : `${host}/${pathStr}`;
 
   try {
     const response = await fetch(url);

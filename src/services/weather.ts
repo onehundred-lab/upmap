@@ -97,9 +97,21 @@ export async function fetchWeather(office: string): Promise<WeatherData | null> 
     }
   } catch { /* ignore */ }
 
-  // API 호출
+  // API 호출 (Vercel 프록시 경유 - CORS 우회)
   const { baseDate, baseTime } = getBaseDateTime();
-  const url = `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=${DATA_GO_KR_KEY}&pageNo=1&numOfRows=300&dataType=JSON&base_date=${baseDate}&base_time=${baseTime}&nx=${grid.nx}&ny=${grid.ny}`;
+  const params = new URLSearchParams({
+    target: 'weather',
+    path: '1360000/VilageFcstInfoService_2.0/getVilageFcst',
+    serviceKey: DATA_GO_KR_KEY,
+    pageNo: '1',
+    numOfRows: '300',
+    dataType: 'JSON',
+    base_date: baseDate,
+    base_time: baseTime,
+    nx: String(grid.nx),
+    ny: String(grid.ny),
+  });
+  const url = `/api/proxy?${params.toString()}`;
 
   try {
     const res = await fetch(url);
