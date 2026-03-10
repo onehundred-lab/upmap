@@ -278,10 +278,14 @@ function App() {
     }
   };
 
+  const [tipSubmitting, setTipSubmitting] = useState(false);
+
   const submitTip = async (placeId: string) => {
-    if (!tipText.trim()) return;
+    if (!tipText.trim() || tipSubmitting) return;
+    setTipSubmitting(true);
     await addTip(placeId, tipText.trim());
     setTipText('');
+    setTipSubmitting(false);
   };
 
   // 등록 모달 열기
@@ -456,7 +460,7 @@ function App() {
                             onChange={e => setTipText(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && submitTip(place.id)}
                           />
-                          <button className="tip-submit" onClick={() => submitTip(place.id)}>등록</button>
+                          <button className="tip-submit" onClick={() => submitTip(place.id)} disabled={tipSubmitting}>{tipSubmitting ? '...' : '등록'}</button>
                         </div>
                         <ul className="tip-list">
                           {tips.map(t => (
