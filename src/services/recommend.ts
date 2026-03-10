@@ -72,19 +72,38 @@ export async function registerPlace(place: {
   return id;
 }
 
-// 등록된 맛집 실시간 리스닝 (사옥별)
+// 등록된 맛집 실시간 리스닝 (사옥별) - 최초만 정렬, 이후 순서 유지
 export function listenPlaces(
   office: string,
   callback: (places: RegisteredPlace[]) => void,
 ): () => void {
   const placesRef = ref(db, 'upmap/places');
+  let orderRef: string[] | null = null;
   const handler = (snap: any) => {
     if (!snap.exists()) { callback([]); return; }
     const val = snap.val();
     const list: RegisteredPlace[] = Object.entries(val)
       .map(([id, v]: [string, any]) => ({ id, ...v }))
-      .filter((p: any) => p.office === office)
-      .sort((a: any, b: any) => (b.recommends || 0) - (a.recommends || 0));
+      .filter((p: any) => p.office === office);
+
+    if (!orderRef) {
+      // 최초 로드: 추천순 정렬 후 순서 기억
+      list.sort((a, b) => (b.recommends || 0) - (a.recommends || 0));
+      orderRef = list.map(p => p.id);
+    } else {
+      // 이후: 기존 순서 유지, 새 항목은 맨 위에
+      const sorted: RegisteredPlace[] = [];
+      const remaining = new Map(list.map(p => [p.id, p]));
+      for (const id of orderRef) {
+        const p = remaining.get(id);
+        if (p) { sorted.push(p); remaining.delete(id); }
+      }
+      // 새로 추가된 항목은 맨 앞에
+      remaining.forEach(p => sorted.unshift(p));
+      orderRef = sorted.map(p => p.id);
+      list.length = 0;
+      list.push(...sorted);
+    }
     callback(list);
   };
   onValue(placesRef, handler);

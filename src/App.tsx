@@ -12,6 +12,8 @@ import { submitInquiry, listenInquiries, deleteInquiry } from './services/inquir
 import type { Inquiry } from './services/inquiry';
 import { addTip, listenTips } from './services/tips';
 import type { Tip } from './services/tips';
+import { fetchWeather, getWeatherSummary } from './services/weather';
+import type { WeatherData } from './services/weather';
 import './App.css';
 
 function App() {
@@ -55,6 +57,9 @@ function App() {
   const [tipText, setTipText] = useState('');
   const tipUnsubRef = useRef<(() => void) | null>(null);
 
+  // 날씨
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+
   // 공공데이터 로드
   useEffect(() => {
     fetchGovStores(selectedOffice.lat, selectedOffice.lng, 1000).then(setGovStores);
@@ -62,6 +67,7 @@ function App() {
     fetchCertStores().then(setCertStores);
     fetchModelRestaurants(selectedOffice.shortName).then(setModelRestaurants);
     fetchFdaModelStores(selectedOffice.shortName).then(setFdaModelStores);
+    fetchWeather(selectedOffice.shortName).then(setWeather);
   }, [selectedOffice]);
 
   // Firebase 실시간 리스닝
@@ -259,8 +265,11 @@ function App() {
   }, [displayPlaces, mapReady]);
 
   // 추천하기
+  const [justRecommended, setJustRecommended] = useState<Set<string>>(new Set());
+
   const handleRecommend = async (placeId: string) => {
-    if (hasRecommended(placeId)) return;
+    if (hasRecommended(placeId) || justRecommended.has(placeId)) return;
+    setJustRecommended(prev => new Set(prev).add(placeId));
     await recommendPlace(placeId);
   };
 
@@ -344,6 +353,7 @@ function App() {
     <div className="app">
       <header className="header">
         <h1 className="logo"><img src="/icon-header.svg" alt="UPmap" className="logo-icon" /> UPmap</h1>
+        {weather && <span className="weather-info">{getWeatherSummary(weather)}</span>}
         <button className="inquiry-btn" onClick={() => setShowInquiry(true)}>💬 문의</button>
       </header>
 
@@ -396,7 +406,7 @@ function App() {
           <ul className="place-list">
             {displayPlaces.map(place => {
               const badges = isAutoCategory ? [] : getBadges(place.name, place.lat, place.lng);
-              const recommended = hasRecommended(place.id);
+              const recommended = hasRecommended(place.id) || justRecommended.has(place.id);
               return (
                 <li key={place.id} className="place-item">
                   <div className="place-info">
@@ -437,13 +447,13 @@ function App() {
                         </div>
                       )}
                     </div>
+                    {!isAutoCategory && badges.length > 0 && (
+                      <div className="place-badges-row">
+                        {badges.map(b => <span key={b} className="badge">{b}</span>)}
+                      </div>
+                    )}
                     <div className="place-category-row">
                       <span className="place-category">{place.category}</span>
-                      {badges.length > 0 && (
-                        <div className="place-badges">
-                          {badges.map(b => <span key={b} className="badge">{b}</span>)}
-                        </div>
-                      )}
                     </div>
                     {(place as any).mainMenu && (
                       <div className="place-menu">🍽️ {(place as any).mainMenu}</div>

@@ -320,6 +320,14 @@ body {
 }
 
 
+.place-badges-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-bottom: 2px;
+}
+
 .place-category-row {
   display: flex;
   justify-content: space-between;
@@ -593,8 +601,17 @@ body {
 }
 
 /* 문의 버튼 */
-.inquiry-btn {
+/* 날씨 */
+.weather-info {
+  font-size: 13px;
+  color: #e6edf3;
+  white-space: nowrap;
   margin-left: auto;
+}
+
+/* 문의 버튼 */
+.inquiry-btn {
+  margin-left: 8px;
   padding: 4px 12px;
   border-radius: 12px;
   border: 1px solid #30363d;
