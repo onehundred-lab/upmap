@@ -755,19 +755,20 @@ body {
   transition: all 0.15s;
 }
 
-.tip-btn:hover, .tip-btn.active {
+.tip-btn.active {
   background: #ffb400;
   color: #0d1117;
 }
 
-@media (hover: none) {
-  .tip-btn:hover:not(.active) {
-    background: rgba(255, 180, 0, 0.1);
-    color: #ffb400;
+@media (hover: hover) {
+  .tip-btn:hover {
+    background: #ffb400;
+    color: #0d1117;
   }
-  .badge-tip:hover:not(.badge-tip-active) {
-    background: rgba(255, 180, 0, 0.1);
-    color: #ffb400;
+  .badge-tip:hover {
+    background: #ffb400;
+    color: #0d1117;
+    border-color: #ffb400;
   }
 }
 
