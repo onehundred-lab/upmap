@@ -10,7 +10,7 @@ import {
 import type { RegisteredPlace } from './services/recommend';
 import { submitInquiry, listenInquiries, deleteInquiry } from './services/inquiry';
 import type { Inquiry } from './services/inquiry';
-import { addTip, listenTips } from './services/tips';
+import { addTip, listenTips, listenAllTipCounts } from './services/tips';
 import type { Tip } from './services/tips';
 import { fetchWeather, getWeatherSummary } from './services/weather';
 import type { WeatherData } from './services/weather';
@@ -56,6 +56,7 @@ function App() {
   const [tips, setTips] = useState<Tip[]>([]);
   const [tipText, setTipText] = useState('');
   const tipUnsubRef = useRef<(() => void) | null>(null);
+  const [tipCounts, setTipCounts] = useState<Record<string, number>>({});
 
   // 날씨
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -79,6 +80,12 @@ function App() {
     });
     return unsub;
   }, [selectedOffice]);
+
+  // 꿀팁 카운트 실시간 리스닝
+  useEffect(() => {
+    const unsub = listenAllTipCounts(setTipCounts);
+    return unsub;
+  }, []);
 
   // 카카오 SDK 로드 대기
   useEffect(() => {
@@ -438,22 +445,21 @@ function App() {
                           >
                             👍 {place.recommends || ''}
                           </button>
-                          <button
-                            className={`tip-btn ${openTipId === place.id ? 'active' : ''}`}
-                            onClick={() => toggleTip(place.id)}
-                          >
-                            🍯 꿀팁
-                          </button>
+                          <span className="tip-btn-wrap">
+                            <button
+                              className={`tip-btn ${openTipId === place.id ? 'active' : ''}`}
+                              onClick={() => toggleTip(place.id)}
+                            >
+                              🍯 꿀팁
+                            </button>
+                          </span>
                         </div>
                       )}
                     </div>
-                    {!isAutoCategory && badges.length > 0 && (
-                      <div className="place-badges-row">
-                        {badges.map(b => <span key={b} className="badge">{b}</span>)}
-                      </div>
-                    )}
                     <div className="place-category-row">
                       <span className="place-category">{place.category}</span>
+                      {!isAutoCategory && badges.map(b => <span key={b} className="badge">{b}</span>)}
+                      {!isAutoCategory && tipCounts[place.id] ? <span className={`badge badge-tip ${openTipId === place.id ? 'badge-tip-active' : ''}`} style={{cursor:'pointer'}} onClick={() => toggleTip(place.id)}>🐝 {tipCounts[place.id]}</span> : null}
                     </div>
                     {(place as any).mainMenu && (
                       <div className="place-menu">🍽️ {(place as any).mainMenu}</div>

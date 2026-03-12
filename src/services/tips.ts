@@ -25,3 +25,19 @@ export function listenTips(placeId: string, callback: (tips: Tip[]) => void): ()
   onValue(tipsRef, handler);
   return () => off(tipsRef, 'value', handler);
 }
+
+export function listenAllTipCounts(callback: (counts: Record<string, number>) => void): () => void {
+  const tipsRoot = ref(db, 'upmap/tips');
+  const handler = (snap: any) => {
+    if (!snap.exists()) { callback({}); return; }
+    const val = snap.val();
+    const counts: Record<string, number> = {};
+    for (const placeId of Object.keys(val)) {
+      counts[placeId] = Object.keys(val[placeId]).length;
+    }
+    callback(counts);
+  };
+  onValue(tipsRoot, handler);
+  return () => off(tipsRoot, 'value', handler);
+}
+
