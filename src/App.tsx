@@ -280,8 +280,8 @@ function App() {
     await recommendPlace(placeId);
   };
 
-  const toggleTip = (placeId: string) => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  const toggleTip = (placeId: string, e?: React.MouseEvent) => {
+    if (e) (e.currentTarget as HTMLElement).blur();
     if (openTipId === placeId) {
       setOpenTipId(null);
       setTips([]);
@@ -449,7 +449,7 @@ function App() {
                           <span className="tip-btn-wrap">
                             <button
                               className={`tip-btn ${openTipId === place.id ? 'active' : ''}`}
-                              onClick={() => toggleTip(place.id)}
+                              onClick={(e) => toggleTip(place.id, e)}
                               onMouseEnter={e => e.currentTarget.classList.add('hovered')}
                               onMouseLeave={e => e.currentTarget.classList.remove('hovered')}
                             >
@@ -462,7 +462,7 @@ function App() {
                     <div className="place-category-row">
                       <span className="place-category">{place.category}</span>
                       {!isAutoCategory && badges.map(b => <span key={b} className="badge">{b}</span>)}
-                      {!isAutoCategory && tipCounts[place.id] ? <span className={`badge badge-tip ${openTipId === place.id ? 'badge-tip-active' : ''}`} style={{cursor:'pointer'}} onClick={() => toggleTip(place.id)}>🐝 {tipCounts[place.id]}</span> : null}
+                      {!isAutoCategory && tipCounts[place.id] ? <span className={`badge badge-tip ${openTipId === place.id ? 'badge-tip-active' : ''}`} style={{cursor:'pointer'}} onClick={(e) => toggleTip(place.id, e)}>🐝 {tipCounts[place.id]}</span> : null}
                     </div>
                     {(place as any).mainMenu && (
                       <div className="place-menu">🍽️ {(place as any).mainMenu}</div>
