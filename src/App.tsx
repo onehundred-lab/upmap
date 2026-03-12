@@ -450,6 +450,8 @@ function App() {
                             <button
                               className={`tip-btn ${openTipId === place.id ? 'active' : ''}`}
                               onClick={() => toggleTip(place.id)}
+                              onMouseEnter={e => e.currentTarget.classList.add('hovered')}
+                              onMouseLeave={e => e.currentTarget.classList.remove('hovered')}
                             >
                               🍯 꿀팁
                             </button>

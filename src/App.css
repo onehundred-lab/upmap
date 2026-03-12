@@ -753,6 +753,8 @@ body {
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .tip-btn.active {
@@ -760,20 +762,15 @@ body {
   color: #0d1117;
 }
 
-.tip-btn:focus {
-  outline: none;
+.tip-btn.hovered {
+  background: #ffb400;
+  color: #0d1117;
 }
 
-@media (hover: hover) {
-  .tip-btn:hover {
-    background: #ffb400;
-    color: #0d1117;
-  }
-  .badge-tip:hover {
-    background: #ffb400;
-    color: #0d1117;
-    border-color: #ffb400;
-  }
+.badge-tip.hovered {
+  background: #ffb400;
+  color: #0d1117;
+  border-color: #ffb400;
 }
 
 .tip-btn-wrap {
