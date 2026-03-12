@@ -281,6 +281,7 @@ function App() {
   };
 
   const toggleTip = (placeId: string) => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     if (openTipId === placeId) {
       setOpenTipId(null);
       setTips([]);

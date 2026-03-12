@@ -760,6 +760,10 @@ body {
   color: #0d1117;
 }
 
+.tip-btn:focus {
+  outline: none;
+}
+
 @media (hover: hover) {
   .tip-btn:hover {
     background: #ffb400;
